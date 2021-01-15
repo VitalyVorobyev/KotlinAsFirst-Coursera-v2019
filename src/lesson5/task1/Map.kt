@@ -284,29 +284,29 @@ fun findSumOfTwo(list: List<Int>, number: Int): Pair<Int, Int> = TODO()
  */
 fun bagPacking(treasures: Map<String, Pair<Int, Int>>, capacity: Int): Set<String> {
     if (treasures.isEmpty()) return emptySet()
+    val keys = treasures.keys.toList()
 
-    var B = MutableList(treasures.size + 1) { MutableList(capacity) { 0 } }
-
-    val keysList = treasures.keys.toList()
-    val weights = treasures.values.map { x -> x.first }
-    val values = treasures.values.map { x -> x.second }
-
-    for (cap in 0 until capacity - 1) {
-        for (item in 1..treasures.size) {
-            if (weights[item] >= cap) {
-                B[item][cap] = max(B[item - 1][cap], B[item - 1][cap - weights[item]] + values[item])
+    var bMtx = MutableList(treasures.size + 1) { MutableList(capacity + 1) { 0 } }
+    for (item in 1..treasures.size) {
+        val (weight, value) = treasures[keys[item - 1]]!!
+        for (cap in 1..capacity) {
+            if (weight <= cap) {
+                bMtx[item][cap] = max(
+                    bMtx[item - 1][cap],
+                    bMtx[item - 1][cap - weight] + value
+                )
             } else {
-                B[item][cap] = B[item - 1][cap]
+                bMtx[item][cap] = bMtx[item - 1][cap]
             }
         }
     }
 
-    var curCapacity = capacity - 1
+    var curCapacity = capacity
     var result = MutableList(0) { "" }
     for (curItem in treasures.size downTo 1) {
-        if (B[curItem][curCapacity] != B[curItem - 1][curCapacity]) {
-            result.add(keysList[curItem])
-            curCapacity -= weights[curItem]
+        if (bMtx[curItem][curCapacity] != bMtx[curItem - 1][curCapacity]) {
+            result.add(keys[curItem - 1])
+            curCapacity -= treasures[keys[curItem - 1]]?.first!!
         }
     }
     return result.toSet()
