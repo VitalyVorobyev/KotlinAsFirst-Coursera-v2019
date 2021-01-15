@@ -67,7 +67,13 @@ fun digitCountInNumber(n: Int, m: Int): Int =
  *
  * Использовать операции со строками в этой задаче запрещается.
  */
-fun digitNumber(n: Int): Int = TODO()
+fun digitNumber(n: Int): Int {
+    return when {
+        n < 10 -> 1
+        n < 0 -> digitNumber(-n)
+        else -> digitNumber(n / 10) + 1
+    }
+}
 
 /**
  * Простая
@@ -75,7 +81,17 @@ fun digitNumber(n: Int): Int = TODO()
  * Найти число Фибоначчи из ряда 1, 1, 2, 3, 5, 8, 13, 21, ... с номером n.
  * Ряд Фибоначчи определён следующим образом: fib(1) = 1, fib(2) = 1, fib(n+2) = fib(n) + fib(n+1)
  */
-fun fib(n: Int): Int = TODO()
+fun fib(n: Int): Int {
+    if (n < 3) return 1;
+    var a = 1
+    var b = 1
+    for (n in 3..n) {
+        val c = a
+        a = b
+        b += c
+    }
+    return b;
+}
 
 /**
  * Простая
@@ -196,7 +212,20 @@ fun hasDifferentDigits(n: Int): Boolean = TODO()
  *
  * Использовать операции со строками в этой задаче запрещается.
  */
-fun squareSequenceDigit(n: Int): Int = TODO()
+fun squareSequenceDigit(n: Int): Int {
+    var digitCount = 1
+    var curVal = 1;
+    while (digitCount < n) {
+        curVal++
+        digitCount += digitNumber(curVal * curVal)
+    }
+    var curSqr = curVal * curVal
+    while (digitCount != n) {
+        curSqr /= 10
+        digitCount--
+    }
+    return curSqr % 10
+}
 
 /**
  * Сложная
@@ -207,4 +236,20 @@ fun squareSequenceDigit(n: Int): Int = TODO()
  *
  * Использовать операции со строками в этой задаче запрещается.
  */
-fun fibSequenceDigit(n: Int): Int = TODO()
+fun fibSequenceDigit(n: Int): Int {
+    if (n < 3) return 1
+    var digitCount = 2
+    var prevFib = 1
+    var curFib = 1;
+    while (digitCount < n) {
+        val c = prevFib
+        prevFib = curFib
+        curFib += c
+        digitCount += digitNumber(curFib)
+    }
+    while (digitCount != n) {
+        curFib /= 10
+        digitCount--
+    }
+    return curFib % 10
+}

@@ -212,7 +212,7 @@ fun convertToString(n: Int, base: Int): String = TODO()
  * из системы счисления с основанием base в десятичную.
  * Например: digits = (1, 3, 12), base = 14 -> 250
  */
-fun decimal(digits: List<Int>, base: Int): Int = TODO()
+fun decimal(digits: List<Int>, base: Int): Int = digits.fold(0) { prev, dig -> prev * base + dig }
 
 /**
  * Сложная
@@ -226,7 +226,14 @@ fun decimal(digits: List<Int>, base: Int): Int = TODO()
  * Использовать функции стандартной библиотеки, напрямую и полностью решающие данную задачу
  * (например, str.toInt(base)), запрещается.
  */
-fun decimalFromString(str: String, base: Int): Int = TODO()
+
+fun decimalFromString(str: String, base: Int): Int = str.fold(0) { prev, ch ->
+    prev * base + when (ch) {
+        in '0'..'9' -> ch.minus('0')
+        else -> 10 + ch.minus('a')
+    }
+}
+
 
 /**
  * Сложная
@@ -236,7 +243,30 @@ fun decimalFromString(str: String, base: Int): Int = TODO()
  * 90 = XC, 100 = C, 400 = CD, 500 = D, 900 = CM, 1000 = M.
  * Например: 23 = XXIII, 44 = XLIV, 100 = C
  */
-fun roman(n: Int): String = TODO()
+
+fun romanAux(n: Int, h: Char, t: Char, u: Char): String = when (n) {
+    1 -> listOf(u)
+    2 -> listOf(u, u)
+    3 -> listOf(u, u, u)
+    4 -> listOf(u, t)
+    5 -> listOf(t)
+    6 -> listOf(t, u)
+    7 -> listOf(t, u, u)
+    8 -> listOf(t, u, u, u)
+    9 -> listOf(u, h)
+    else -> listOf("")
+}.joinToString(separator = "")
+
+fun roman(n: Int): String {
+    val thousands = n / 1000
+    val hundreds = (n - 1000 * thousands) / 100
+    val tens = (n - 1000 * thousands - 100 * hundreds) / 10
+    val units = n % 10
+    return romanAux(thousands, '_', '_', 'M') +
+            romanAux(hundreds, 'M', 'D', 'C') +
+            romanAux(tens, 'C', 'L', 'X') +
+            romanAux(units, 'X', 'V', 'I')
+}
 
 /**
  * Очень сложная
@@ -245,4 +275,87 @@ fun roman(n: Int): String = TODO()
  * Например, 375 = "триста семьдесят пять",
  * 23964 = "двадцать три тысячи девятьсот шестьдесят четыре"
  */
-fun russian(n: Int): String = TODO()
+
+fun russianAuxUnits(n: Int, female: Boolean): String = when (n) {
+    1 -> if (female) " одна" else " один"
+    2 -> if (female) " две" else " два"
+    3 -> " три"
+    4 -> " четыре"
+    5 -> " пять"
+    6 -> " шесть"
+    7 -> " семь"
+    8 -> " восемь"
+    9 -> " девять"
+    10 -> " десять"
+    11 -> " одиннадцать"
+    12 -> " двенадцать"
+    13 -> " тринадцать"
+    14 -> " четырнадцать"
+    15 -> " пятнадцать"
+    16 -> " шестнадцать"
+    17 -> " семнадцать"
+    18 -> " восемнадцать"
+    19 -> " девятнадцать"
+    else -> ""
+}
+
+fun russianAuxTens(n: Int): String = when (n) {
+    2 -> " двадцать"
+    3 -> " тридцать"
+    4 -> " сорок"
+    5 -> " пятьдесят"
+    6 -> " шестьдесят"
+    7 -> " семьдесят"
+    8 -> " восемьдесят"
+    9 -> " девяносто"
+    else -> ""
+}
+
+fun russianAuxHundreds(n: Int): String = when (n) {
+    1 -> " сто"
+    2 -> " двести"
+    3 -> " триста"
+    4 -> " четыреста"
+    5 -> " пятьсот"
+    6 -> " шестьсот"
+    7 -> " семьсот"
+    8 -> " восемьсот"
+    9 -> " девятьсот"
+    else -> ""
+}
+
+fun russianAuxThousands(t: Int): String = when (t) {
+    1 -> " тысяча"
+    in 2..4 -> " тысячи"
+    else -> " тысяч"
+}
+
+fun russian(n: Int): String {
+    val digitList = n.toString().toList().reversed().map { it.minus('0') }
+    var result = ""
+    if (n > 99999) {
+        result += russianAuxHundreds(digitList[5])
+    }
+    if (n > 9999) {
+        result += if (digitList[4] < 2) {
+            val xxThou = n / 1000 % 100
+            russianAuxUnits(xxThou, true) + russianAuxThousands(xxThou)
+        } else {
+            russianAuxTens(digitList[4]) + russianAuxUnits(
+                digitList[3],
+                true
+            ) + russianAuxThousands(digitList[3])
+        }
+    } else if (n > 999) {
+        result += russianAuxUnits(digitList[3], true) + russianAuxThousands(digitList[3])
+    }
+    if (n > 99) {
+        result += russianAuxHundreds(digitList[2])
+    }
+    result += if (n % 100 < 20) {
+        russianAuxUnits(n % 100, false)
+    } else {
+        russianAuxTens(digitList[1]) + russianAuxUnits(digitList[0], false)
+    }
+    return result.trim()
+}
