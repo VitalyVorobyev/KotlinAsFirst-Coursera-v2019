@@ -208,4 +208,80 @@ fun fromRoman(roman: String): Int = TODO()
  * IllegalArgumentException должен бросаться даже если ошибочная команда не была достигнута в ходе выполнения.
  *
  */
-fun computeDeviceCells(cells: Int, commands: String, limit: Int): List<Int> = TODO()
+fun checkCommands(commands: String) {
+    val allowedSymbols = setOf('>', '+', '<', '[', ']', ' ', '-')
+    var bracketCount = 0
+    for (ch in commands) {
+        if (ch == '[') {
+            bracketCount++
+        } else if (ch == ']') {
+            if (bracketCount <= 0) throw IllegalArgumentException()
+            bracketCount--
+        } else if (ch !in allowedSymbols) {
+            throw IllegalArgumentException()
+        }
+    }
+    if (bracketCount != 0) throw IllegalArgumentException()
+}
+
+fun findCorrespondingClosing(commands: String, position: Int): Int {
+    var bracketCount = 0
+    var currentPosition = position
+    while (true) {
+        val ch = commands[currentPosition]
+        if (ch == '[') bracketCount++
+        else if (ch == ']') {
+            bracketCount--
+            if (bracketCount == 0) return currentPosition
+        }
+        currentPosition++
+    }
+    return 0
+}
+
+fun findCorrespondingOpening(commands: String, position: Int): Int {
+    var bracketCount = 0
+    var currentPosition = position
+    while (true) {
+        val ch = commands[currentPosition]
+        if (ch == ']') bracketCount++
+        else if (ch == '[') {
+            bracketCount--
+            if (bracketCount == 0) return currentPosition
+        }
+        currentPosition--
+    }
+    return 0
+}
+
+fun computeDeviceCells(cells: Int, commands: String, limit: Int): List<Int> {
+    checkCommands(commands)
+    var state = MutableList(cells) { 0 }
+    var commandsCount = 0
+    var currentPosition = cells / 2
+    var currentCommand = 0
+    while (commandsCount < limit) {
+        commandsCount++
+
+        if (currentCommand == commands.length) break
+        val ch = commands[currentCommand]
+
+        currentCommand++
+
+        if (ch == '+') state[currentPosition]++
+        else if (ch == '-') state[currentPosition]--
+        else if (ch == ' ') continue
+        else if (ch == '>') currentPosition++
+        else if (ch == '<') currentPosition--
+        else if (ch == '[' && state[currentPosition] == 0) {
+            currentCommand--
+            currentCommand = findCorrespondingClosing(commands, currentCommand) + 1
+        } else if (ch == ']' && state[currentPosition] != 0) {
+            currentCommand--
+            currentCommand = findCorrespondingOpening(commands, currentCommand) + 1
+        }
+
+        if (currentPosition < 0 || currentPosition >= cells) throw IllegalStateException()
+    }
+    return state
+}

@@ -53,7 +53,29 @@ fun alignFile(inputName: String, lineLength: Int, outputName: String) {
  * Регистр букв игнорировать, то есть буквы е и Е считать одинаковыми.
  *
  */
-fun countSubstrings(inputName: String, substrings: List<String>): Map<String, Int> = TODO()
+fun countMatches(inputString: String, pattern: String): Int {
+    var position = 0
+    var counter = 0
+    while (position < inputString.length) {
+        position = inputString.indexOf(pattern, position)
+        if (position == -1) break
+        position++
+        counter++
+    }
+    return counter
+}
+
+fun countSubstrings(inputName: String, substrings: List<String>): Map<String, Int> {
+    var omap = substrings.map { it to 0 }.toMap().toMutableMap()
+    for (line in File(inputName).readLines()) {
+        val loCaseLine = line.toLowerCase()
+        for (pattern in substrings) {
+            val loCasePattern = pattern.toLowerCase()
+            omap[pattern] = omap[pattern]!! + countMatches(loCaseLine, loCasePattern)
+        }
+    }
+    return omap
+}
 
 
 /**
@@ -244,21 +266,97 @@ Suspendisse ~~et elit in enim tempus iaculis~~.
  *
  * Соответствующий выходной файл:
 <html>
-    <body>
-        <p>
-            Lorem ipsum <i>dolor sit amet</i>, consectetur <b>adipiscing</b> elit.
-            Vestibulum lobortis. <s>Est vehicula rutrum <i>suscipit</i></s>, ipsum <s>lib</s>ero <i>placerat <b>tortor</b></i>.
-        </p>
-        <p>
-            Suspendisse <s>et elit in enim tempus iaculis</s>.
-        </p>
-    </body>
+<body>
+<p>
+Lorem ipsum <i>dolor sit amet</i>, consectetur <b>adipiscing</b> elit.
+Vestibulum lobortis. <s>Est vehicula rutrum <i>suscipit</i></s>, ipsum <s>lib</s>ero <i>placerat <b>tortor</b></i>.
+</p>
+<p>
+Suspendisse <s>et elit in enim tempus iaculis</s>.
+</p>
+</body>
 </html>
  *
  * (Отступы и переносы строк в примере добавлены для наглядности, при решении задачи их реализовывать не обязательно)
  */
 fun markdownToHtmlSimple(inputName: String, outputName: String) {
-    TODO()
+    var tagStack = emptyList<String>().toMutableList()
+    var asteriskCnt = 0
+    var tildaCnt = 0
+    File(outputName).writer().use {
+        it.write("<html><body><p>")
+        for (line in File(inputName).readLines()) {
+            if (line.isEmpty()) {
+                it.write("</p><p>")
+                continue
+            }
+            for (ch in line) {
+                if (ch == '*') asteriskCnt++ else {
+                    when (asteriskCnt) {
+                        2 -> when {
+                            tagStack.isNotEmpty() && tagStack.last() == "bold" -> {
+                                it.write("</b>")
+                                tagStack.removeAt(tagStack.size - 1)
+                            }
+                            else -> {
+                                it.write("<b>")
+                                tagStack.add("bold")
+                            }
+                        }
+                        1 -> when {
+                            tagStack.isNotEmpty() && tagStack.last() == "italic" -> {
+                                it.write("</i>")
+                                tagStack.removeAt(tagStack.size - 1)
+                            }
+                            else -> {
+                                it.write("<i>")
+                                tagStack.add("italic")
+                            }
+                        }
+                        3 -> when {
+                            tagStack.isNotEmpty() && tagStack.last() == "italic" -> {
+                                it.write("</i></b>")
+                                tagStack.dropLast(2)
+                            }
+                            tagStack.isNotEmpty() && tagStack.last() == "bold" -> {
+                                it.write("</b></i>")
+                                tagStack.removeAt(tagStack.size - 1)
+                                tagStack.removeAt(tagStack.size - 1)
+                            }
+                            else -> {
+                                it.write("<b><i>")
+                                tagStack.addAll(listOf("bold", "italic"))
+                            }
+                        }
+                        else -> 0
+                    }
+                    asteriskCnt = 0
+                }
+
+                if (ch == '~') tildaCnt++ else {
+                    when (tildaCnt) {
+                        1 -> it.write("~")
+                        2 -> when {
+                            tagStack.isNotEmpty() && tagStack.last() == "crossed" -> {
+                                it.write("</s>")
+                                tagStack.removeAt(tagStack.size - 1)
+                            }
+                            else -> {
+                                it.write("<s>")
+                                tagStack.add("crossed")
+                            }
+                        }
+                        else -> 0
+                    }
+                    tildaCnt = 0
+                }
+
+                if (ch != '*' && ch != '~') it.write(ch.toString())
+            }
+            it.write("\n")
+        }
+        it.write("</p></body></html>")
+    }
 }
 
 /**
@@ -295,67 +393,67 @@ fun markdownToHtmlSimple(inputName: String, outputName: String) {
  *
  * Пример входного файла:
 ///////////////////////////////начало файла/////////////////////////////////////////////////////////////////////////////
-* Утка по-пекински
-    * Утка
-    * Соус
-* Салат Оливье
-    1. Мясо
-        * Или колбаса
-    2. Майонез
-    3. Картофель
-    4. Что-то там ещё
-* Помидоры
-* Фрукты
-    1. Бананы
-    23. Яблоки
-        1. Красные
-        2. Зелёные
+ * Утка по-пекински
+ * Утка
+ * Соус
+ * Салат Оливье
+1. Мясо
+ * Или колбаса
+2. Майонез
+3. Картофель
+4. Что-то там ещё
+ * Помидоры
+ * Фрукты
+1. Бананы
+23. Яблоки
+1. Красные
+2. Зелёные
 ///////////////////////////////конец файла//////////////////////////////////////////////////////////////////////////////
  *
  *
  * Соответствующий выходной файл:
 ///////////////////////////////начало файла/////////////////////////////////////////////////////////////////////////////
 <html>
-  <body>
-    <ul>
-      <li>
-        Утка по-пекински
-        <ul>
-          <li>Утка</li>
-          <li>Соус</li>
-        </ul>
-      </li>
-      <li>
-        Салат Оливье
-        <ol>
-          <li>Мясо
-            <ul>
-              <li>
-                  Или колбаса
-              </li>
-            </ul>
-          </li>
-          <li>Майонез</li>
-          <li>Картофель</li>
-          <li>Что-то там ещё</li>
-        </ol>
-      </li>
-      <li>Помидоры</li>
-      <li>
-        Фрукты
-        <ol>
-          <li>Бананы</li>
-          <li>
-            Яблоки
-            <ol>
-              <li>Красные</li>
-              <li>Зелёные</li>
-            </ol>
-          </li>
-        </ol>
-      </li>
-    </ul>
-  </body>
+<body>
+<ul>
+<li>
+Утка по-пекински
+<ul>
+<li>Утка</li>
+<li>Соус</li>
+</ul>
+</li>
+<li>
+Салат Оливье
+<ol>
+<li>Мясо
+<ul>
+<li>
+Или колбаса
+</li>
+</ul>
+</li>
+<li>Майонез</li>
+<li>Картофель</li>
+<li>Что-то там ещё</li>
+</ol>
+</li>
+<li>Помидоры</li>
+<li>
+Фрукты
+<ol>
+<li>Бананы</li>
+<li>
+Яблоки
+<ol>
+<li>Красные</li>
+<li>Зелёные</li>
+</ol>
+</li>
+</ol>
+</li>
+</ul>
+</body>
 </html>
 ///////////////////////////////конец файла//////////////////////////////////////////////////////////////////////////////
  * (Отступы и переносы строк в примере добавлены для наглядности, при решении задачи их реализовывать не обязательно)
@@ -382,23 +480,23 @@ fun markdownToHtml(inputName: String, outputName: String) {
  * Вывести в выходной файл процесс умножения столбиком числа lhv (> 0) на число rhv (> 0).
  *
  * Пример (для lhv == 19935, rhv == 111):
-   19935
-*    111
+19935
+ *    111
 --------
-   19935
+19935
 + 19935
 +19935
 --------
- 2212785
+2212785
  * Используемые пробелы, отступы и дефисы должны в точности соответствовать примеру.
  * Нули в множителе обрабатывать так же, как и остальные цифры:
-  235
-*  10
+235
+ *  10
 -----
-    0
+0
 +235
 -----
- 2350
+2350
  *
  */
 fun printMultiplicationProcess(lhv: Int, rhv: Int, outputName: String) {
@@ -412,16 +510,16 @@ fun printMultiplicationProcess(lhv: Int, rhv: Int, outputName: String) {
  * Вывести в выходной файл процесс деления столбиком числа lhv (> 0) на число rhv (> 0).
  *
  * Пример (для lhv == 19935, rhv == 22):
-  19935 | 22
- -198     906
- ----
-    13
-    -0
-    --
-    135
-   -132
-   ----
-      3
+19935 | 22
+-198     906
+----
+13
+-0
+--
+135
+-132
+----
+3
 
  * Используемые пробелы, отступы и дефисы должны в точности соответствовать примеру.
  *
