@@ -369,7 +369,7 @@ fun markdownToHtmlSimple(inputName: String, outputName: String) {
  *
  * Каждый элемент ненумерованного списка начинается с новой строки и символа '*', каждый элемент нумерованного списка --
  * с новой строки, числа и точки. Каждый элемент вложенного списка начинается с отступа из пробелов, на 4 пробела большего,
- * чем список-родитель. Максимально глубина вложенности списков может достигать 6. "Верхние" списки файла начинются
+ * чем список-родитель. Максимально глубина вложенности списков может достигать 6. "Верхние" списки файла начинаются
  * прямо с начала строки.
  *
  * Следует вывести этот же текст в выходной файл в формате HTML:
@@ -458,8 +458,64 @@ fun markdownToHtmlSimple(inputName: String, outputName: String) {
 ///////////////////////////////конец файла//////////////////////////////////////////////////////////////////////////////
  * (Отступы и переносы строк в примере добавлены для наглядности, при решении задачи их реализовывать не обязательно)
  */
+fun getIndent(line: String): Int {
+    var idx = 0
+    for (ch in line) {
+        if (ch == ' ') idx++
+        else break
+    }
+    return idx
+}
+
 fun markdownToHtmlLists(inputName: String, outputName: String) {
-    TODO()
+    var indent = 0
+    var tagStack = emptyList<String>().toMutableList()
+    File(outputName).writer().use {
+        it.write("<html><body>")
+        for (line in File(inputName).readLines()) {
+            val unordered = line.trim().startsWith('*')
+            val li = when (unordered) {
+                true -> line.trim().substring(1)
+                false -> line.substring(line.indexOf('.') + 1)
+            }
+
+            val curInd = getIndent(line)
+            when {
+                curInd == indent && tagStack.isNotEmpty() -> {
+                    it.write("</li><li>$li")
+                }
+                curInd < indent -> {
+                    when (tagStack.last()) {
+                        "ul" -> it.write("</li></ul>")
+                        "ol" -> it.write("</li></ol>")
+                    }
+                    tagStack.removeAt(tagStack.size - 1)
+                    it.write("</li><li>$li")
+                }
+                else -> {
+                    when (unordered) {
+                        true -> {
+                            it.write("<ul><li>$li")
+                            tagStack.add("ul")
+                        }
+                        false -> {
+                            it.write("<ol><li>$li")
+                            tagStack.add("ol")
+                        }
+                    }
+                }
+            }
+            indent = curInd
+        }
+
+        for (item in tagStack.reversed()) {
+            when (item) {
+                "ol" -> it.write("</li></ol>")
+                "ul" -> it.write("</li></ul>")
+            }
+        }
+        it.write("</body></html>")
+    }
 }
 
 /**
@@ -473,6 +529,22 @@ fun markdownToHtmlLists(inputName: String, outputName: String) {
 fun markdownToHtml(inputName: String, outputName: String) {
     TODO()
 }
+//    var tagStack = emptyList<String>().toMutableList()
+//    var asteriskCnt = 0
+//    var tildaCnt = 0
+//    var indent = 0
+//    File(outputName).writer().use {
+//        it.write("<html><body><p>")
+//        for (line in File(inputName).readLines()) {
+//            if (line.isEmpty()) {
+//                it.write("</p><p>")
+//                continue
+//            }
+//            val curInd = getIndent(line)
+//            val unordered = line.trim().startsWith('*')
+//        }
+//    }
+//}
 
 /**
  * Средняя
